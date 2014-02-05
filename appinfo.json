@@ -1,9 +1,9 @@
 {
-    "versionLabel": "1.0",
+    "versionLabel": "0.1",
     "uuid": "4b8a2be7-bff0-4269-aefb-8f28fbf3fc48",
     "appKeys": {},
     "longName": "ingress cycle time",
-    "versionCode": 1,
+    "versionCode": 2,
     "capabilities": [
         ""
     ],
