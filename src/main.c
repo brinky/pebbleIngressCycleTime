@@ -10,6 +10,7 @@ TextLayer *tl_list;
 #define CYCLE_SEC 630000
 #define CP_SEC 18000
 #define BUF_SIZE 100
+#define SHOW_CP_NUM 6
 
 char buffer[10][BUF_SIZE];
 
@@ -17,14 +18,14 @@ static void update_time(struct tm *tick_time) {
 	
 	//time_t t = mktime(tick_time);
 	
-	time_t t = time(NULL);
-	t = t - START_TIME_SEC;
+	time_t rt = time(NULL);
+	uint32_t t = rt - START_TIME_SEC;
 	uint32_t cycle = t / CYCLE_SEC;
 	//TODO calc year - decrement cycle
 	uint32_t year = 2014;
 	uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
 	uint32_t countdown = CP_SEC - t % CP_SEC;
-	uint32_t tmp = (year%100)*60 + cycle;
+	uint32_t tmp = (year%100) * 60 + cycle;
 
 	strftime(buffer[0], BUF_SIZE, "20%M.%S ", localtime((time_t*)&tmp));
 	strftime(buffer[1], BUF_SIZE, "%S/35", localtime((time_t*)&cp));
@@ -34,6 +35,16 @@ static void update_time(struct tm *tick_time) {
 	struct tm *tms = localtime((time_t*)&countdown);
 	strftime(buffer[2], BUF_SIZE, "%H:%M:%S", tms);
 	text_layer_set_text(tl_countdown, buffer[2]);
+	
+	//TODO 2?
+	uint32_t next = rt + countdown + 2;
+	for(int i=0; i<SHOW_CP_NUM; ++i){
+		tms = localtime((time_t*)&next);
+		strftime(buffer[3] + 4*i, BUF_SIZE, "%H: ", tms);
+		next += CP_SEC;
+	}
+	buffer[3][SHOW_CP_NUM * 4 - 1] = '\0';
+	text_layer_set_text(tl_list, buffer[3]);
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
@@ -52,27 +63,28 @@ void handle_init(void) {
 	
 	window_set_background_color(my_window, GColorBlack);
 	
-	tl_cycle = text_layer_create(GRect(10, 10, 70, 26));
+	tl_cycle = text_layer_create(GRect(0, 0, 70, 26));
 	text_layer_set_font(tl_cycle, font_m);	
 	text_layer_set_text_alignment(tl_cycle, GTextAlignmentLeft);
 	text_layer_set_background_color(tl_cycle, GColorBlack);
 	text_layer_set_text_color(tl_cycle, GColorWhite);
 	
-	tl_cp = text_layer_create(GRect(10+70, 10, frame.size.w-20-70, 26));
+	tl_cp = text_layer_create(GRect(70, 0, frame.size.w-70, 26));
 	text_layer_set_font(tl_cp, font_m);
 	text_layer_set_text_alignment(tl_cp, GTextAlignmentRight);
 	text_layer_set_background_color(tl_cp, GColorBlack);
 	text_layer_set_text_color(tl_cp, GColorWhite);
 	
 
-	tl_countdown = text_layer_create(GRect(10, 38, frame.size.w-20, 30));
+	tl_countdown = text_layer_create(GRect(0, 28, frame.size.w, 30));
 	text_layer_set_font(tl_countdown, font_b);
 	text_layer_set_text_alignment(tl_countdown, GTextAlignmentCenter);
 	text_layer_set_background_color(tl_countdown, GColorBlack);
 	text_layer_set_text_color(tl_countdown, GColorWhite);
 	
-	tl_list = text_layer_create(GRect(10, 70, frame.size.w-20, frame.size.h-64));
+	tl_list = text_layer_create(GRect(0, frame.size.h-20, frame.size.w, 20));
 	text_layer_set_font(tl_list, font_s);
+	text_layer_set_text_alignment(tl_list, GTextAlignmentCenter);
 	text_layer_set_background_color(tl_list, GColorBlack);
 	text_layer_set_text_color(tl_list, GColorWhite);
 	
