@@ -14,38 +14,43 @@ TextLayer *tl_list;
 
 char buffer[10][BUF_SIZE];
 
-static void update_time() {
+static void update_time(bool fullupdate) {
 	time_t rt = time(NULL);
 	uint32_t t = rt - START_TIME_SEC;
-	uint32_t cycle = t / CYCLE_SEC;
-	//TODO calc year - decrement cycle
-	uint32_t year = 2014;
-	uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
 	uint32_t countdown = CP_SEC - t % CP_SEC;
-	uint32_t tmp = (year%100) * 60 + cycle;
-
-	strftime(buffer[0], BUF_SIZE, "20%M.%S ", localtime((time_t*)&tmp));
-	strftime(buffer[1], BUF_SIZE, "%S/35", localtime((time_t*)&cp));
-	text_layer_set_text(tl_cycle, buffer[0]);
-	text_layer_set_text(tl_cp, buffer[1]);
+	struct tm *tms;
 	
-	struct tm *tms = localtime((time_t*)&countdown);
+	if(!fullupdate){
+		fullupdate = (rt % 3600 == 0);
+	}
+	
+	if(fullupdate){
+		uint32_t cycle = t / CYCLE_SEC;
+		//TODO calc year - decrement cycle
+		uint32_t year = 2014;
+		uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
+		uint32_t tmp = (year%100) * 60 + cycle;
+		strftime(buffer[0], BUF_SIZE, "20%M.%S ", localtime((time_t*)&tmp));
+		strftime(buffer[1], BUF_SIZE, "%S/35", localtime((time_t*)&cp));
+		text_layer_set_text(tl_cycle, buffer[0]);
+		text_layer_set_text(tl_cp, buffer[1]);
+	
+		uint32_t next = rt + countdown;
+		for(int i=0; i<SHOW_CP_NUM; ++i){
+			tms = localtime((time_t*)&next);
+			strftime(buffer[3] + 4*i, BUF_SIZE, "%H: ", tms);
+			next += CP_SEC;
+		}
+		buffer[3][SHOW_CP_NUM * 4 - 1] = '\0';
+		text_layer_set_text(tl_list, buffer[3]);
+	}
+	tms = localtime((time_t*)&countdown);
 	strftime(buffer[2], BUF_SIZE, "%H:%M:%S", tms);
 	text_layer_set_text(tl_countdown, buffer[2]);
-	
-	//TODO 2?
-	uint32_t next = rt + countdown;
-	for(int i=0; i<SHOW_CP_NUM; ++i){
-		tms = localtime((time_t*)&next);
-		strftime(buffer[3] + 4*i, BUF_SIZE, "%H: ", tms);
-		next += CP_SEC;
-	}
-	buffer[3][SHOW_CP_NUM * 4 - 1] = '\0';
-	text_layer_set_text(tl_list, buffer[3]);
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
-	update_time();
+	update_time(false);
 }
 
 void handle_init(void) {
@@ -91,7 +96,7 @@ void handle_init(void) {
 	layer_add_child(root_layer, text_layer_get_layer(tl_list));
 	
 	tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
-	update_time();
+	update_time(true);
 }
 
 void handle_deinit(void) {
