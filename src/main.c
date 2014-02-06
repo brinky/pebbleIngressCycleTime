@@ -14,10 +14,7 @@ TextLayer *tl_list;
 
 char buffer[10][BUF_SIZE];
 
-static void update_time(struct tm *tick_time) {
-	
-	//time_t t = mktime(tick_time);
-	
+static void update_time() {
 	time_t rt = time(NULL);
 	uint32_t t = rt - START_TIME_SEC;
 	uint32_t cycle = t / CYCLE_SEC;
@@ -48,7 +45,7 @@ static void update_time(struct tm *tick_time) {
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
-  update_time(tick_time);
+	update_time();
 }
 
 void handle_init(void) {
@@ -94,22 +91,19 @@ void handle_init(void) {
 	layer_add_child(root_layer, text_layer_get_layer(tl_list));
 	
 	tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+	update_time();
 }
 
 void handle_deinit(void) {
-	
-	
-	  text_layer_destroy(tl_cycle);
-	  text_layer_destroy(tl_cp);
-	  text_layer_destroy(tl_countdown);
-	  text_layer_destroy(tl_list);
-	  
-
-	  window_destroy(my_window);
+	text_layer_destroy(tl_cycle);
+	text_layer_destroy(tl_cp);
+	text_layer_destroy(tl_countdown);
+	text_layer_destroy(tl_list);
+	window_destroy(my_window);
 }
 
 int main(void) {
-	  handle_init();
-	  app_event_loop();
-	  handle_deinit();
+	handle_init();
+	app_event_loop();
+	handle_deinit();
 }
