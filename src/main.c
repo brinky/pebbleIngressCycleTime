@@ -6,7 +6,7 @@ TextLayer *tl_cp;
 TextLayer *tl_countdown;
 TextLayer *tl_list;
 
-#define START_TIME_SEC 1388523598
+#define START_TIME_SEC 1388523600
 #define CYCLE_SEC 630000
 #define CP_SEC 18000
 #define BUF_SIZE 100
@@ -34,7 +34,7 @@ static void update_time() {
 	text_layer_set_text(tl_countdown, buffer[2]);
 	
 	//TODO 2?
-	uint32_t next = rt + countdown + 2;
+	uint32_t next = rt + countdown;
 	for(int i=0; i<SHOW_CP_NUM; ++i){
 		tms = localtime((time_t*)&next);
 		strftime(buffer[3] + 4*i, BUF_SIZE, "%H: ", tms);
