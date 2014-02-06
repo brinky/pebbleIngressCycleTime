@@ -13,6 +13,18 @@
         "watchface": true
     },
     "resources": {
-        "media": []
+        "media": [
+            {
+                "menuIcon": true,
+                "type": "png",
+                "name": "IMAGE_RES_LOGO",
+                "file": "images/res_logo.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_RES",
+                "file": "images/res.png"
+            }
+        ]
     }
 }

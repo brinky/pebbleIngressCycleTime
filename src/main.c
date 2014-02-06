@@ -5,6 +5,8 @@ TextLayer *tl_cycle;
 TextLayer *tl_cp;
 TextLayer *tl_countdown;
 TextLayer *tl_list;
+GBitmap *img_res;
+BitmapLayer *bl_res;
 
 #define START_TIME_SEC 1388523600
 #define CYCLE_SEC 630000
@@ -90,6 +92,12 @@ void handle_init(void) {
 	text_layer_set_background_color(tl_list, GColorBlack);
 	text_layer_set_text_color(tl_list, GColorWhite);
 	
+	img_res = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_RES);
+	bl_res = bitmap_layer_create(GRect(0, 64, frame.size.w, frame.size.h-88));
+	bitmap_layer_set_bitmap(bl_res, img_res);
+	bitmap_layer_set_alignment(bl_res, GAlignCenter);
+	
+	layer_add_child(root_layer, bitmap_layer_get_layer(bl_res));
 	layer_add_child(root_layer, text_layer_get_layer(tl_cycle));	
 	layer_add_child(root_layer, text_layer_get_layer(tl_cp));	
 	layer_add_child(root_layer, text_layer_get_layer(tl_countdown));	
@@ -104,6 +112,8 @@ void handle_deinit(void) {
 	text_layer_destroy(tl_cp);
 	text_layer_destroy(tl_countdown);
 	text_layer_destroy(tl_list);
+	bitmap_layer_destroy(bl_res);
+	gbitmap_destroy(img_res);
 	window_destroy(my_window);
 }
 
