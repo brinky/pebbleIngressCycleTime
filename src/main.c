@@ -11,10 +11,10 @@ BitmapLayer *bl_res;
 #define START_TIME_SEC 1388523600
 #define CYCLE_SEC 630000
 #define CP_SEC 18000
-#define BUF_SIZE 100
+#define BUF_SIZE 30
 #define SHOW_CP_NUM 6
 
-char buffer[10][BUF_SIZE];
+char buffer[3][BUF_SIZE];
 
 static void update_time(bool fullupdate) {
 	time_t rt = time(NULL);
