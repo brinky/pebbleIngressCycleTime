@@ -31,19 +31,16 @@ static void update_time(bool fullupdate) {
 		//TODO calc year - decrement cycle
 		uint32_t year = 2014;
 		uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
-		//uint32_t tmp = (year%100) * 60 + cycle;
-		//strftime(buffer[0], BUF_SIZE, "20%M.%S ", localtime((time_t*)&tmp));
-		//strftime(buffer[1], BUF_SIZE, "%S/35", localtime((time_t*)&cp));
 		snprintf(buffer[0], BUF_SIZE, "%lu.%02lu", year, cycle);
 		snprintf(buffer[1], BUF_SIZE, "%02lu/35", cp);
 		text_layer_set_text(tl_cycle, buffer[0]);
 		text_layer_set_text(tl_cp, buffer[1]);
 	
 		uint32_t next = rt + countdown;
-		for(int i=0; i<SHOW_CP_NUM; ++i){
-			tms = localtime((time_t*)&next);
-			strftime(buffer[3] + 4*i, BUF_SIZE, "%H: ", tms);
-			next += CP_SEC;
+		tms = localtime((time_t*) &next);
+		int nc = tms->tm_hour;
+		for(int i=0; i<SHOW_CP_NUM; ++i, nc = (nc+5) % 24){
+			snprintf(buffer[3] + 4*i, BUF_SIZE, "%02d: ", nc);
 		}
 		buffer[3][SHOW_CP_NUM * 4 - 1] = '\0';
 		text_layer_set_text(tl_list, buffer[3]);
