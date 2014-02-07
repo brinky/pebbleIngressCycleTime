@@ -14,7 +14,7 @@ BitmapLayer *bl_res;
 #define BUF_SIZE 30
 #define SHOW_CP_NUM 6
 
-char buffer[3][BUF_SIZE];
+char buffer[4][BUF_SIZE];
 
 static void update_time(bool fullupdate) {
 	time_t rt = time(NULL);
@@ -31,9 +31,11 @@ static void update_time(bool fullupdate) {
 		//TODO calc year - decrement cycle
 		uint32_t year = 2014;
 		uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
-		uint32_t tmp = (year%100) * 60 + cycle;
-		strftime(buffer[0], BUF_SIZE, "20%M.%S ", localtime((time_t*)&tmp));
-		strftime(buffer[1], BUF_SIZE, "%S/35", localtime((time_t*)&cp));
+		//uint32_t tmp = (year%100) * 60 + cycle;
+		//strftime(buffer[0], BUF_SIZE, "20%M.%S ", localtime((time_t*)&tmp));
+		//strftime(buffer[1], BUF_SIZE, "%S/35", localtime((time_t*)&cp));
+		snprintf(buffer[0], BUF_SIZE, "%lu.%02lu", year, cycle);
+		snprintf(buffer[1], BUF_SIZE, "%02lu/35", cp);
 		text_layer_set_text(tl_cycle, buffer[0]);
 		text_layer_set_text(tl_cp, buffer[1]);
 	
