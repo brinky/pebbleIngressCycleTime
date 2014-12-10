@@ -8,7 +8,7 @@ TextLayer *tl_list;
 GBitmap *img_res;
 BitmapLayer *bl_res;
 
-#define START_TIME_SEC 1388523600
+#define START_TIME_SEC 1388520000  --remove 1 hour for quick fix
 #define CYCLE_SEC 630000
 #define CP_SEC 18000
 #define BUF_SIZE 30
