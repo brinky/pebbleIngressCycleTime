@@ -16,6 +16,15 @@ BitmapLayer *bl_res;
 
 char buffer[4][BUF_SIZE];
 
+void handle_conn(bool connected) {
+	if (connected) {
+		text_conn_layer.hidden=true;
+	} else {
+		text_conn_layer.hidden=false;
+		vibes_double_pulse();
+	}
+}
+
 static void update_time(bool fullupdate) {
 	time_t rt = time(NULL);
 	uint32_t t = rt - START_TIME_SEC;
@@ -96,6 +105,14 @@ void handle_init(void) {
 	bitmap_layer_set_bitmap(bl_res, img_res);
 	bitmap_layer_set_alignment(bl_res, GAlignCenter);
 	
+	text_conn_layer = text_layer_create(GRect(0, 64, frame.size.w, frame.size.h-88))
+        text_layer_set_font(text_conn_layer, font_s);
+	text_layer_set_text_alignment(text_conn_layer, GTextAlignmentCenter);
+	text_layer_set_background_color(text_conn_layer, GColorBlack);
+	text_layer_set_text_color(text_conn_layer, GColorWhite);
+	text_layer_set_text(text_conn_layer, "CONN LOST");
+	text_conn_layer.hidden=true;
+	
 	layer_add_child(root_layer, bitmap_layer_get_layer(bl_res));
 	layer_add_child(root_layer, text_layer_get_layer(tl_cycle));	
 	layer_add_child(root_layer, text_layer_get_layer(tl_cp));	
@@ -103,14 +120,20 @@ void handle_init(void) {
 	layer_add_child(root_layer, text_layer_get_layer(tl_list));
 	
 	tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+	bluetooth_connection_service_subscribe(handle_conn);
+	handle_conn(bluetooth_connection_service_peek());
 	update_time(true);
 }
 
 void handle_deinit(void) {
+	tick_timer_service_unsubscribe();
+	battery_state_service_unsubscribe();
+	bluetooth_connection_service_unsubscribe();
 	text_layer_destroy(tl_cycle);
 	text_layer_destroy(tl_cp);
 	text_layer_destroy(tl_countdown);
 	text_layer_destroy(tl_list);
+	text_layer_destroy(text_conn_layer)
 	bitmap_layer_destroy(bl_res);
 	gbitmap_destroy(img_res);
 	window_destroy(my_window);
