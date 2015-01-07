@@ -1,30 +1,31 @@
 {
-    "versionLabel": "0.3",
-    "uuid": "4b8a2be7-bff0-4269-aefb-8f28fbf3fc48",
     "appKeys": {},
-    "longName": "ingress cycle time",
-    "versionCode": 4,
     "capabilities": [
         ""
     ],
-    "shortName": "cycle time",
     "companyName": "@brinky/@noweb4u",
-    "watchapp": {
-        "watchface": true
-    },
+    "longName": "ingress cycle time",
+    "projectType": "native",
     "resources": {
         "media": [
             {
-                "type": "png",
-                "name": "IMAGE_RES",
-                "file": "images/res.png"
+                "file": "images/res_logo.png",
+                "menuIcon": true,
+                "name": "IMAGE_RES_LOGO",
+                "type": "png"
             },
             {
-                "menuIcon": true,
-                "type": "png",
-                "name": "IMAGE_RES_LOGO",
-                "file": "images/res_logo.png"
+                "file": "images/res.png",
+                "name": "IMAGE_RES",
+                "type": "png"
             }
         ]
+    },
+    "shortName": "cycle time",
+    "uuid": "4b8a2be7-bff0-4269-aefb-8f28fbf3fc48",
+    "versionCode": 4,
+    "versionLabel": "0.3",
+    "watchapp": {
+        "watchface": true
     }
 }
