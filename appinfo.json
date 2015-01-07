@@ -9,14 +9,14 @@
     "resources": {
         "media": [
             {
-                "file": "images/res_logo.png",
-                "menuIcon": true,
-                "name": "IMAGE_RES_LOGO",
+                "file": "images/res.png",
+                "name": "IMAGE_RES",
                 "type": "png"
             },
             {
-                "file": "images/res.png",
-                "name": "IMAGE_RES",
+                "file": "images/res_logo.png",
+                "menuIcon": true,
+                "name": "IMAGE_RES_LOGO",
                 "type": "png"
             }
         ]

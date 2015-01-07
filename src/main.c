@@ -1,5 +1,4 @@
 #include <pebble.h>
-#include <PDUtils.h>
 
 Window *my_window;
 TextLayer *tl_cycle;
@@ -44,27 +43,28 @@ static void update_time(bool fullupdate) {
 	uint32_t countdown = CP_SEC - t % CP_SEC;
 	struct tm *tms;
   struct tm *acttime;
-
-	
+  struct tm *curcyclestart;
+  
 	if(!fullupdate){
 		fullupdate = (rt % 3600 == 0);
 	}
 	
 	if(fullupdate){
     uint32_t next = rt + countdown;
-		tms = localtime((time_t*) &next);
-		uint32_t year = tms->tm_year+1900; //we have our year
-    uint32_t offset = ymd_to_scalar(year,1,1); //this is the beginning of the current year
-		uint32_t cycle = t - offset / CYCLE_SEC;
+    uint32_t last = rt - (CYCLE_SEC-countdown);
+    curcyclestart = localtime((time_t*) &last);
+		uint32_t year = curcyclestart->tm_year+1900; //we have our year
+    uint32_t offset = last-(curcyclestart->tm_yday*86400)-(curcyclestart->tm_hour*60*60)-(curcyclestart->tm_min*60)-(curcyclestart->tm_sec)-1;
+		uint32_t cycle = (t - offset) / CYCLE_SEC;
     uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
-        APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", offset, cycle, cp, year);
+    APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", offset, cycle, cp, year);
 
 		snprintf(buffer[0], BUF_SIZE, "%lu.%02lu", year, cycle);
 		snprintf(buffer[1], BUF_SIZE, "%02lu/35", cp);
 		text_layer_set_text(tl_cycle, buffer[0]);
 		text_layer_set_text(tl_cp, buffer[1]);
 	
-
+		tms = localtime((time_t*) &next);
 		int nc = tms->tm_hour;
 		for(int i=0; i<SHOW_CP_NUM; ++i, nc = (nc+5) % 24){
 			snprintf(buffer[3] + CP_DATA_SIZE*i, BUF_SIZE, "%02d:00,", nc); 
@@ -75,8 +75,8 @@ static void update_time(bool fullupdate) {
 	tms = localtime((time_t*)&countdown);
 	strftime(buffer[2], BUF_SIZE, "%H:%M:%S", tms);
 	text_layer_set_text(tl_countdown, buffer[2]);
-  
-  acttime = localtime((time_t*)&rt);
+
+  acttime = localtime((time_t*) &rt);
   strftime(buffer[5], BUF_SIZE, "%H:%M:%S", acttime);
   text_layer_set_text(tl_realtime, buffer[5]);
   
