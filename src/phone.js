@@ -16,11 +16,13 @@ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 */
 
+var L = {};
+
 var zeroPad = function(number,pad) {
  number = number.toString();
  var zeros = pad - number.length;
  return Array(zeros>0?zeros+1:0).join("0") + number;
-}
+};
 
 var LatLngToXYZ = function(latLng) {
   var d2r = Math.PI/180.0;
@@ -40,7 +42,7 @@ var XYZToLatLng = function(xyz) {
   var lng = Math.atan2(xyz[1], xyz[0]);
 
   return L.latLng(lat*r2d, lng*r2d);
-};
+}; 
 
 var largestAbsComponent = function(xyz) {
   var temp = [Math.abs(xyz[0]), Math.abs(xyz[1]), Math.abs(xyz[2])];
@@ -71,11 +73,11 @@ var faceXYZToUV = function(face,xyz) {
     case 3: u =  xyz[2]/xyz[0]; v =  xyz[1]/xyz[0]; break;
     case 4: u =  xyz[2]/xyz[1]; v = -xyz[0]/xyz[1]; break;
     case 5: u = -xyz[1]/xyz[2]; v = -xyz[0]/xyz[2]; break;
-    default: throw {error: 'Invalid face'}; break;
+    default: throw {error: 'Invalid face'}; 
   }
 
   return [u,v];
-}
+};
 
 
 
@@ -87,7 +89,7 @@ var XYZToFaceUV = function(xyz) {
     face += 3;
   }
 
-  uv = faceXYZToUV (face,xyz);
+  var uv = faceXYZToUV (face,xyz);
 
   return [face, uv];
 };
@@ -115,7 +117,7 @@ var STToUV = function(st) {
     } else {
       return (1/3.0) * (1 - (4*(1-st)*(1-st)));
     }
-  }
+  };
 
   return [singleSTtoUV(st[0]), singleSTtoUV(st[1])];
 };
@@ -129,7 +131,7 @@ var UVToST = function(uv) {
     } else {
       return 1 - 0.5 * Math.sqrt (1 - 3*uv);
     }
-  }
+  };
 
   return [singleUVtoST(uv[0]), singleUVtoST(uv[1])];
 };
@@ -154,7 +156,7 @@ var IJToST = function(ij,order,offsets) {
     (ij[0]+offsets[0])/maxSize,
     (ij[1]+offsets[1])/maxSize
   ];
-}
+};
 
 // hilbert space-filling curve
 // based on http://blog.notdot.net/2009/11/Damn-Cool-Algorithms-Spatial-indexing-with-Quadtrees-and-Hilbert-Curves
@@ -190,7 +192,7 @@ var pointToHilbertQuadList = function(x,y,order) {
 };
 
 
-S2 = {};
+var S2 = {};
 
 // S2Cell class
 
@@ -208,7 +210,7 @@ S2.S2Cell.FromLatLng = function(latLng,level) {
 
   return S2.S2Cell.FromFaceIJ (faceuv[0], ij, level);
 
-  return result;
+  
 };
 
 S2.S2Cell.FromFaceIJ = function(face,ij,level) {
@@ -297,7 +299,7 @@ S2.S2Cell.prototype.getNeighbors = function() {
   ];
 
 };
-regionName = function(cell) {
+var regionName = function(cell) {
   var face2name = [ 'AF', 'AS', 'NR', 'PA', 'AM', 'ST' ];
   var codeWord = [
     'ALPHA',
@@ -359,11 +361,11 @@ latlng.lat = coordinates.latitude;
 latlng.lng = coordinates.longitude;
 var cell = S2.S2Cell.FromLatLng ( latlng , 6 );
 
-var transactionId = Pebble.sendAppMessage( { '0': d.getTimezoneOffset(), '1': regionName(cell) },
+Pebble.sendAppMessage( { '0': d.getTimezoneOffset(), '1': regionName(cell) },
 function(e) { console.log('Success'); },
 function(e) { console.log('Failure'); }
 ); 
-};
+}
 
 function updatePebble(e)
 {

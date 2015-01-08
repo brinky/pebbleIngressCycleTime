@@ -8,10 +8,11 @@ TextLayer *tl_list;
 TextLayer *tl_conn_layer;
 TextLayer *tl_batt_layer;
 TextLayer *tl_realtime;
+TextLayer *tl_region_layer;
 GBitmap *img_res;
 BitmapLayer *bl_res;
 
-static int offset = 0;
+static int utcoffset = -1;
 static char region[] = "-REGION-";
 
 #define START_TIME_SEC 0  //checkpoints actually can be done without special modulus - unix epoch is okay
@@ -74,6 +75,7 @@ static void update_time(bool fullupdate) {
 		}
 		buffer[3][SHOW_CP_NUM * CP_DATA_SIZE - 1] = '\0';
 		text_layer_set_text(tl_list, buffer[3]);
+    if (utcoffset != -1) { app_message_outbox_send(); };
 	}
 	tms = localtime((time_t*)&countdown);
 	strftime(buffer[2], BUF_SIZE, "%H:%M:%S", tms);
@@ -82,11 +84,25 @@ static void update_time(bool fullupdate) {
   acttime = localtime((time_t*) &rt);
   strftime(buffer[5], BUF_SIZE, "%H:%M:%S", acttime);
   text_layer_set_text(tl_realtime, buffer[5]);
-  
+
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 	update_time(false);
+}
+
+static void in_received_handler(DictionaryIterator *iter, void *context) {
+	Tuple *ofs = dict_find(iter, 0);
+	Tuple *rgn = dict_find(iter, 1);
+	utcoffset = (int)ofs->value->int32;
+	strncpy(region, rgn->value->cstring, rgn->length);
+  text_layer_set_text(tl_region_layer, region);
+
+}
+
+void appmessage_init(void) {
+	app_message_register_inbox_received(in_received_handler);
+	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 
 void handle_init(void) {
@@ -151,7 +167,7 @@ void handle_init(void) {
 	text_layer_set_text_color(tl_batt_layer, GColorWhite);
 	text_layer_set_text(tl_batt_layer, "BATT: --");
  	
-	tl_region_layer = text_layer_create(GRect(55, 120, frame.size.w-60, 20));
+	tl_region_layer = text_layer_create(GRect(30, 120, frame.size.w-35, 20));
  	text_layer_set_font(tl_region_layer, font_s);
 	text_layer_set_text_alignment(tl_region_layer, GTextAlignmentRight);
 	text_layer_set_background_color(tl_region_layer, GColorBlack);
@@ -165,7 +181,7 @@ void handle_init(void) {
 	layer_add_child(root_layer, text_layer_get_layer(tl_list));
 	layer_add_child(root_layer, text_layer_get_layer(tl_conn_layer));
 	layer_add_child(root_layer, text_layer_get_layer(tl_batt_layer));
-        layer_add_child(root_layer, text_layer_get_layer(tl_region_layer));
+  layer_add_child(root_layer, text_layer_get_layer(tl_region_layer));
 	layer_add_child(root_layer, text_layer_get_layer(tl_realtime));
   
 	tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
@@ -174,6 +190,7 @@ void handle_init(void) {
 	battery_state_service_subscribe(handle_batt);
 	handle_batt(battery_state_service_peek());
 	update_time(true);
+  appmessage_init();
 }
 
 
@@ -192,19 +209,6 @@ void handle_deinit(void) {
 	window_destroy(my_window);
 }
 
-static void in_received_handler(DictionaryIterator *iter, void *context) {
-	Tuple *ofs = dict_find(iter, 0);
-	Tuple *rgn = dict_find(iter, 1);
-	int offset = (int)ofs->value->int32;
-	strncpy(region, rgn->value->cstring, rgn->length);
-        text_layer_set_text(tl_region_layer, region);
-
-}
-
-void appmessage_init(void) {
-	app_message_register_inbox_received(in_received_handler);
-	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
-}
 
 int main(void) {
 	handle_init();
