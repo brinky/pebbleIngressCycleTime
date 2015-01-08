@@ -11,6 +11,9 @@ TextLayer *tl_realtime;
 GBitmap *img_res;
 BitmapLayer *bl_res;
 
+static int offset = 0;
+static char region[] = "-REGION-";
+
 #define START_TIME_SEC 0  //checkpoints actually can be done without special modulus - unix epoch is okay
 #define CYCLE_SEC 630000
 #define CP_SEC 18000
@@ -148,21 +151,28 @@ void handle_init(void) {
 	text_layer_set_text_color(tl_batt_layer, GColorWhite);
 	text_layer_set_text(tl_batt_layer, "BATT: --");
  	
-  
+	tl_region_layer = text_layer_create(GRect(55, 120, frame.size.w-60, 20));
+ 	text_layer_set_font(tl_region_layer, font_s);
+	text_layer_set_text_alignment(tl_region_layer, GTextAlignmentRight);
+	text_layer_set_background_color(tl_region_layer, GColorBlack);
+	text_layer_set_text_color(tl_region_layer, GColorWhite);
+	text_layer_set_text(tl_region_layer, "-REGION-");	
+ 
 	layer_add_child(root_layer, bitmap_layer_get_layer(bl_res));
 	layer_add_child(root_layer, text_layer_get_layer(tl_cycle));	
 	layer_add_child(root_layer, text_layer_get_layer(tl_cp));	
 	layer_add_child(root_layer, text_layer_get_layer(tl_countdown));	
 	layer_add_child(root_layer, text_layer_get_layer(tl_list));
 	layer_add_child(root_layer, text_layer_get_layer(tl_conn_layer));
-  layer_add_child(root_layer, text_layer_get_layer(tl_batt_layer));
-  layer_add_child(root_layer, text_layer_get_layer(tl_realtime));
+	layer_add_child(root_layer, text_layer_get_layer(tl_batt_layer));
+        layer_add_child(root_layer, text_layer_get_layer(tl_region_layer));
+	layer_add_child(root_layer, text_layer_get_layer(tl_realtime));
   
 	tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
 	bluetooth_connection_service_subscribe(handle_conn);
 	handle_conn(bluetooth_connection_service_peek());
-  battery_state_service_subscribe(handle_batt);
-  handle_batt(battery_state_service_peek());
+	battery_state_service_subscribe(handle_batt);
+	handle_batt(battery_state_service_peek());
 	update_time(true);
 }
 
@@ -176,10 +186,24 @@ void handle_deinit(void) {
 	text_layer_destroy(tl_countdown);
 	text_layer_destroy(tl_list);
 	text_layer_destroy(tl_conn_layer);
-  text_layer_destroy(tl_batt_layer);
+	text_layer_destroy(tl_batt_layer);
 	bitmap_layer_destroy(bl_res);
 	gbitmap_destroy(img_res);
 	window_destroy(my_window);
+}
+
+static void in_received_handler(DictionaryIterator *iter, void *context) {
+	Tuple *ofs = dict_find(iter, 0);
+	Tuple *rgn = dict_find(iter, 1);
+	int offset = (int)ofs->value->int32;
+	strncpy(region, rgn->value->cstring, rgn->length);
+        text_layer_set_text(tl_region_layer, region);
+
+}
+
+void appmessage_init(void) {
+	app_message_register_inbox_received(in_received_handler);
+	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 
 int main(void) {
