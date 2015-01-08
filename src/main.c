@@ -32,7 +32,7 @@ void handle_conn(bool connected) {
 
 void handle_batt(BatteryChargeState charge) {
   static char battstate[BUF_SIZE];
-  snprintf(battstate, BUF_SIZE, "W: %d%% %s%s", charge.charge_percent, charge.is_charging?"C":"", charge.is_plugged?"P":"");
+  snprintf(battstate, BUF_SIZE, "BATT: %d%% %s%s", charge.charge_percent, charge.is_charging?"C":"", charge.is_plugged?"P":"");
   text_layer_set_text(tl_batt_layer, battstate);
 }
 
