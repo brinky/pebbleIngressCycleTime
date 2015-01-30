@@ -3,8 +3,8 @@
     "capabilities": [
         "location"
     ],
-    "companyName": "@brinky/@noweb4u",
-    "longName": "ingress cycle time",
+    "companyName": "@noweb4u/@brinky",
+    "longName": "Ingress Resistance Cycle Time",
     "projectType": "native",
     "resources": {
         "media": [
@@ -21,8 +21,8 @@
             }
         ]
     },
-    "shortName": "cycle time",
-    "uuid": "4b8a2be7-bff0-4269-aefb-8f28fbf3fc48",
+    "shortName": "Resistance Cycle Time",
+    "uuid": "daeb9c98-fb68-456a-8ab9-50153774fa6f",
     "versionCode": 4,
     "versionLabel": "1.0",
     "watchapp": {

@@ -36,9 +36,11 @@ void handle_conn(bool connected) {
 
 void handle_batt(BatteryChargeState charge) {
   static char battstate[BUF_SIZE];
-  snprintf(battstate, BUF_SIZE, "BATT: %d%% %s%s", charge.charge_percent, charge.is_charging?"C":"", charge.is_plugged?"P":"");
+  snprintf(battstate, BUF_SIZE, "%s: %d%%", charge.is_charging?"CHG":"BATT",charge.charge_percent);
   text_layer_set_text(tl_batt_layer, battstate);
 }
+
+static void handle_tick(struct tm *tick_time, TimeUnits units_changed);
 
 static void update_time(bool fullupdate) {
 
@@ -78,11 +80,18 @@ static void update_time(bool fullupdate) {
     if (utcoffset != -1) { app_message_outbox_send(); };
 	}
 	tms = localtime((time_t*)&countdown);
-	strftime(buffer[2], BUF_SIZE, "%H:%M:%S", tms);
-	text_layer_set_text(tl_countdown, buffer[2]);
-
+  if (countdown <= 300) {
+    strftime(buffer[2], BUF_SIZE, "%H:%M:%S", tms);
+    tick_timer_service_unsubscribe();
+    tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+  } else {
+    tick_timer_service_unsubscribe();
+    tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+	  strftime(buffer[2], BUF_SIZE, "%H:%M", tms);
+	  text_layer_set_text(tl_countdown, buffer[2]);
+  };
   acttime = localtime((time_t*) &rt);
-  strftime(buffer[5], BUF_SIZE, "%H:%M:%S", acttime);
+  strftime(buffer[5], BUF_SIZE, "%m/%d %H:%M", acttime);
   text_layer_set_text(tl_realtime, buffer[5]);
 
 }
@@ -184,7 +193,8 @@ void handle_init(void) {
   layer_add_child(root_layer, text_layer_get_layer(tl_region_layer));
 	layer_add_child(root_layer, text_layer_get_layer(tl_realtime));
   
-	tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+	//tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+  tick_timer_service_subscribe(MINUTE_UNIT, &handle_tick);
 	bluetooth_connection_service_subscribe(handle_conn);
 	handle_conn(bluetooth_connection_service_peek());
 	battery_state_service_subscribe(handle_batt);
