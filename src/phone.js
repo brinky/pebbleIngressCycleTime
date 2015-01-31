@@ -351,7 +351,7 @@ var regionName = function(cell) {
   return name;
 };
 
-var locationOptions = { "timeout": 15000, "maximumAge": 60000 };
+var locationOptions = { "timeout": 15000, "maximumAge": 600000 };
 function locationError(err) {}
 function locationSuccess(pos)
 {
@@ -361,7 +361,7 @@ latlng.lat = coordinates.latitude;
 latlng.lng = coordinates.longitude;
 var cell = S2.S2Cell.FromLatLng ( latlng , 6 );
 
-Pebble.sendAppMessage( { '0': d.getTimezoneOffset(), '1': regionName(cell) },
+Pebble.sendAppMessage( { '0': d.getTimezoneOffset()+2400, '1': regionName(cell) },
 function(e) { console.log('Success'); },
 function(e) { console.log('Failure'); }
 ); 

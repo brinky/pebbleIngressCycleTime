@@ -12,8 +12,9 @@ TextLayer *tl_region_layer;
 GBitmap *img_res;
 BitmapLayer *bl_res;
 
-static int utcoffset = -1;
 static char region[] = "-REGION-";
+static uint32_t mydata = 0; //you want ants? That's how you get ants.
+
 
 #define START_TIME_SEC 0  //checkpoints actually can be done without special modulus - unix epoch is okay
 #define CYCLE_SEC 630000
@@ -43,41 +44,46 @@ void handle_batt(BatteryChargeState charge) {
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed);
 
 static void update_time(bool fullupdate) {
-
+  int32_t utcoffset;
+  utcoffset =  mydata - 2400;
+   APP_LOG( APP_LOG_LEVEL_ERROR , "%ld: utcoffset tick",utcoffset*60);
 	time_t rt = time(NULL);
   uint32_t t = rt;
-	uint32_t countdown = CP_SEC - t % CP_SEC;
+	uint32_t countdown = CP_SEC - (t + utcoffset*60)  % CP_SEC ;
 	struct tm *tms;
   struct tm *acttime;
   struct tm *curcyclestart;
   
 	if(!fullupdate){
 		fullupdate = (rt % 3600 == 0);
+    //if (utcoffset != -1) { app_message_outbox_send(); };
 	}
 	
 	if(fullupdate){
-    uint32_t next = rt + countdown;
-    uint32_t last = rt - (CYCLE_SEC-countdown);
+
+    uint32_t next = rt + countdown + utcoffset*60;
+    uint32_t last = rt - (CYCLE_SEC-countdown)+utcoffset*60;
     curcyclestart = localtime((time_t*) &last);
 		uint32_t year = curcyclestart->tm_year+1900; //we have our year
-    uint32_t offset = last-(curcyclestart->tm_yday*86400)-(curcyclestart->tm_hour*60*60)-(curcyclestart->tm_min*60)-(curcyclestart->tm_sec)-1;
+    uint32_t offset = last-(curcyclestart->tm_yday*86400)-(curcyclestart->tm_hour*60*60)-(curcyclestart->tm_min*60)-(curcyclestart->tm_sec);
 		uint32_t cycle = (t - offset) / CYCLE_SEC;
     uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
-    APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", offset, cycle, cp, year);
+    //APP_LOG( APP_LOG_LEVEL_ERROR , "%ld: utcoffset, %lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", utcoffset, offset, cycle, cp, year);
 
 		snprintf(buffer[0], BUF_SIZE, "%lu.%02lu", year, cycle);
 		snprintf(buffer[1], BUF_SIZE, "%02lu/35", cp);
 		text_layer_set_text(tl_cycle, buffer[0]);
 		text_layer_set_text(tl_cp, buffer[1]);
-	
+	  next = next - utcoffset*60;
 		tms = localtime((time_t*) &next);
 		int nc = tms->tm_hour;
+    int ncm = tms->tm_min;
 		for(int i=0; i<SHOW_CP_NUM; ++i, nc = (nc+5) % 24){
-			snprintf(buffer[3] + CP_DATA_SIZE*i, BUF_SIZE, "%02d:00,", nc); 
+			snprintf(buffer[3] + CP_DATA_SIZE*i, BUF_SIZE, "%02d:%02d,", nc,ncm); 
 		}
 		buffer[3][SHOW_CP_NUM * CP_DATA_SIZE - 1] = '\0';
 		text_layer_set_text(tl_list, buffer[3]);
-    if (utcoffset != -1) { app_message_outbox_send(); };
+    
 	}
 	tms = localtime((time_t*)&countdown);
   if (countdown <= 300) {
@@ -86,10 +92,10 @@ static void update_time(bool fullupdate) {
     tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
   } else {
     tick_timer_service_unsubscribe();
-    tick_timer_service_subscribe(SECOND_UNIT, &handle_tick);
+    tick_timer_service_subscribe(MINUTE_UNIT, &handle_tick);
 	  strftime(buffer[2], BUF_SIZE, "%H:%M", tms);
-	  text_layer_set_text(tl_countdown, buffer[2]);
   };
+    text_layer_set_text(tl_countdown, buffer[2]);
   acttime = localtime((time_t*) &rt);
   strftime(buffer[5], BUF_SIZE, "%m/%d %H:%M", acttime);
   text_layer_set_text(tl_realtime, buffer[5]);
@@ -101,12 +107,15 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 }
 
 static void in_received_handler(DictionaryIterator *iter, void *context) {
+  
 	Tuple *ofs = dict_find(iter, 0);
 	Tuple *rgn = dict_find(iter, 1);
-	utcoffset = (int)ofs->value->int32;
+	memcpy(&mydata,&ofs->value->uint32,sizeof(uint32_t));
+  
+  //APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received",mydata);
 	strncpy(region, rgn->value->cstring, rgn->length);
   text_layer_set_text(tl_region_layer, region);
-
+  update_time(true);
 }
 
 void appmessage_init(void) {
