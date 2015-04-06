@@ -61,7 +61,7 @@ static void update_time(bool fullupdate) {
 	if(!fullupdate){
     //APP_LOG( APP_LOG_LEVEL_ERROR , "not full update");
 		fullupdate = (rt % 3600 == 0);
-    if (lastcheck > 0 && lastcheck+500 < t) { APP_LOG( APP_LOG_LEVEL_ERROR, "polling handset for update"); app_message_outbox_send(); };
+    if (lastcheck > 0 && lastcheck+500 < t) { APP_LOG( APP_LOG_LEVEL_ERROR, "lastcheck %ld, fullupdate %d, rt %ld polling handset for update",lastcheck,fullupdate,rt);   lastcheck = (uint32_t) time(NULL); app_message_outbox_send(); };
 	}
 	
 	if(fullupdate){
@@ -236,14 +236,14 @@ void handle_deinit(void) {
 	tick_timer_service_unsubscribe();
 	battery_state_service_unsubscribe();
 	bluetooth_connection_service_unsubscribe();
-	text_layer_destroy(tl_cycle);
-	text_layer_destroy(tl_cp);
-	text_layer_destroy(tl_countdown);
-	text_layer_destroy(tl_list);
-	text_layer_destroy(tl_conn_layer);
-	text_layer_destroy(tl_batt_layer);
+	//text_layer_destroy(tl_cycle);
+	//text_layer_destroy(tl_cp);
+	//text_layer_destroy(tl_countdown);
+	//text_layer_destroy(tl_list);
+	//text_layer_destroy(tl_conn_layer);
+	//text_layer_destroy(tl_batt_layer);
+ 	gbitmap_destroy(img_res);
 	bitmap_layer_destroy(bl_res);
-	//gbitmap_destroy(img_res);
 	window_destroy(my_window);
 }
 
