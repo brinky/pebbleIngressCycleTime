@@ -14,7 +14,7 @@ BitmapLayer *bl_res;
 
 static char region[] = "-REGION-";
 static uint32_t mydata = 0; //you want ants? That's how you get ants.
-
+static uint32_t lastcheck = 0; //last time we asked the phone for region/tz data
 
 #define START_TIME_SEC 0  //checkpoints actually can be done without special modulus - unix epoch is okay
 #define CYCLE_SEC 630000
@@ -26,6 +26,7 @@ static uint32_t mydata = 0; //you want ants? That's how you get ants.
 char buffer[6][BUF_SIZE];
 
 void handle_conn(bool connected) {
+    //APP_LOG( APP_LOG_LEVEL_ERROR , "connected toggle");
 	if (connected) {
 			text_layer_set_text(tl_conn_layer, "BT: OK");
       vibes_short_pulse();
@@ -39,14 +40,17 @@ void handle_batt(BatteryChargeState charge) {
   static char battstate[BUF_SIZE];
   snprintf(battstate, BUF_SIZE, "%s: %d%%", charge.is_charging?"CHG":"BATT",charge.charge_percent);
   text_layer_set_text(tl_batt_layer, battstate);
+  //APP_LOG( APP_LOG_LEVEL_ERROR , "handle batt");
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed);
 
+void appmessage_init(void);
+
 static void update_time(bool fullupdate) {
   int32_t utcoffset;
   utcoffset =  mydata - 2400;
-   APP_LOG( APP_LOG_LEVEL_ERROR , "%ld: utcoffset tick",utcoffset*60);
+   //APP_LOG( APP_LOG_LEVEL_ERROR , "%ld: utcoffset tick",utcoffset*60);
 	time_t rt = time(NULL);
   uint32_t t = rt;
 	uint32_t countdown = CP_SEC - (t + utcoffset*60)  % CP_SEC ;
@@ -55,8 +59,9 @@ static void update_time(bool fullupdate) {
   struct tm *curcyclestart;
   
 	if(!fullupdate){
+    //APP_LOG( APP_LOG_LEVEL_ERROR , "not full update");
 		fullupdate = (rt % 3600 == 0);
-    //if (utcoffset != -1) { app_message_outbox_send(); };
+    if (lastcheck > 0 && lastcheck+500 < t) { APP_LOG( APP_LOG_LEVEL_ERROR, "polling handset for update"); app_message_outbox_send(); };
 	}
 	
 	if(fullupdate){
@@ -68,7 +73,7 @@ static void update_time(bool fullupdate) {
     uint32_t offset = last-(curcyclestart->tm_yday*86400)-(curcyclestart->tm_hour*60*60)-(curcyclestart->tm_min*60)-(curcyclestart->tm_sec);
 		uint32_t cycle = (t - offset) / CYCLE_SEC;
     uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
-    //APP_LOG( APP_LOG_LEVEL_ERROR , "%ld: utcoffset, %lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", utcoffset, offset, cycle, cp, year);
+    APP_LOG( APP_LOG_LEVEL_ERROR , "full update %ld: utcoffset, %lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", utcoffset, offset, cycle, cp, year);
 
 		snprintf(buffer[0], BUF_SIZE, "%lu.%02lu", year, cycle);
 		snprintf(buffer[1], BUF_SIZE, "%02lu/35", cp);
@@ -103,24 +108,38 @@ static void update_time(bool fullupdate) {
 }
 
 static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
-	update_time(false);
+    //APP_LOG( APP_LOG_LEVEL_ERROR , "begin tick");
+    update_time(false);
+    //APP_LOG( APP_LOG_LEVEL_ERROR , "end tick");
+
 }
 
 static void in_received_handler(DictionaryIterator *iter, void *context) {
-  
+  APP_LOG( APP_LOG_LEVEL_ERROR , "inbound data");
 	Tuple *ofs = dict_find(iter, 0);
 	Tuple *rgn = dict_find(iter, 1);
+  if (ofs->value->uint32) {
 	memcpy(&mydata,&ofs->value->uint32,sizeof(uint32_t));
   
-  //APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received",mydata);
 	strncpy(region, rgn->value->cstring, rgn->length);
+  APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received, %s: region",mydata,region);
   text_layer_set_text(tl_region_layer, region);
+  lastcheck = (uint32_t) time(NULL);
   update_time(true);
+  };
+}
+
+static void in_dropped_handler(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
 }
 
 void appmessage_init(void) {
 	app_message_register_inbox_received(in_received_handler);
-	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  app_message_register_inbox_dropped(in_dropped_handler);
+  const int inbound_size = 64;
+  const int outbound_size = 16;
+  app_message_open(inbound_size, outbound_size);
+	//app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 }
 
 void handle_init(void) {
@@ -224,7 +243,7 @@ void handle_deinit(void) {
 	text_layer_destroy(tl_conn_layer);
 	text_layer_destroy(tl_batt_layer);
 	bitmap_layer_destroy(bl_res);
-	gbitmap_destroy(img_res);
+	//gbitmap_destroy(img_res);
 	window_destroy(my_window);
 }
 

@@ -21,10 +21,11 @@
             }
         ]
     },
+    "sdkVersion": "2",
     "shortName": "Resistance Cycle Time",
     "uuid": "daeb9c98-fb68-456a-8ab9-50153774fa6f",
     "versionCode": 4,
-    "versionLabel": "1.2",
+    "versionLabel": "1.3",
     "watchapp": {
         "watchface": true
     }

@@ -352,24 +352,30 @@ var regionName = function(cell) {
 };
 
 var locationOptions = { "timeout": 15000, "maximumAge": 600000 };
-function locationError(err) {}
+var locationWatcher;
+var nextsend=0;
+function locationError(err) { console.log('Failed to acquire position'); }
 function locationSuccess(pos)
 {
-var coordinates = pos.coords;
-var latlng = {};
-latlng.lat = coordinates.latitude;
-latlng.lng = coordinates.longitude;
-var cell = S2.S2Cell.FromLatLng ( latlng , 6 );
-
-Pebble.sendAppMessage( { '0': d.getTimezoneOffset()+2400, '1': regionName(cell) },
-function(e) { console.log('Success'); },
-function(e) { console.log('Failure'); }
-); 
+  var coordinates = pos.coords;
+  var latlng = {};
+  latlng.lat = coordinates.latitude;
+  latlng.lng = coordinates.longitude;
+  var cell = S2.S2Cell.FromLatLng ( latlng , 6 );
+ // window.navigator.geolocation.clearWatch(locationWatcher);
+  if (nextsend < d.getTime()) {
+    Pebble.sendAppMessage( { '0': d.getTimezoneOffset()+2400, '1': regionName(cell) },
+    function(e) { console.log('Success'); },
+    function(e) { console.log('Failure'); }
+    ); 
+    nextsend = d.getTime()+300000;
+  };
+  return true;
 }
 
 function updatePebble(e)
 {
-var locationWatcher = window.navigator.geolocation.watchPosition(locationSuccess, locationError, locationOptions);
+locationWatcher = window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
 }
 var d = new Date();
 Pebble.addEventListener('ready', updatePebble);
