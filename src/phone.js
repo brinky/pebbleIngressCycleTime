@@ -351,12 +351,19 @@ var regionName = function(cell) {
   return name;
 };
 
-var locationOptions = { "timeout": 15000, "maximumAge": 600000 };
+var locationOptions = {  enableHighAccuracy: false, "timeout": 10000, "maximumAge": 600000 };
 var locationWatcher;
 //var nextsend=0;
 var d = new Date();
 
-function locationError(err) { console.log('Failed to acquire position'); }
+function locationError(err) { 
+  console.log('Failed to acquire position');
+    Pebble.sendAppMessage( { '0': d.getTimezoneOffset()+2400, '1': "NO-GPS-LOCK" },
+    function(e) { console.log('Success');   },
+    function(e) { console.log('Failure'); } );
+    return true;
+}
+
 function locationSuccess(pos)
 {
   var coordinates = pos.coords;
@@ -364,20 +371,18 @@ function locationSuccess(pos)
   latlng.lat = coordinates.latitude;
   latlng.lng = coordinates.longitude;
   var cell = S2.S2Cell.FromLatLng ( latlng , 6 );
- // window.navigator.geolocation.clearWatch(locationWatcher);
-  //if (nextsend < d.getTime()) {
+
     Pebble.sendAppMessage( { '0': d.getTimezoneOffset()+2400, '1': regionName(cell) },
     function(e) { console.log('Success'); },
     function(e) { console.log('Failure'); }
     ); 
-    //nextsend = d.getTime()+300000;
-  //};
+    
   return true;
 }
 
 function updatePebble(e)
 {
-locationWatcher = window.navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+  locationWatcher = navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
 }
 Pebble.addEventListener('ready', updatePebble);
 Pebble.addEventListener('appmessage',updatePebble);

@@ -25,11 +25,32 @@ static uint32_t lastcheck = 0; //last time we asked the phone for region/tz data
 
 char buffer[6][BUF_SIZE];
 
+
+char *translate_error(AppMessageResult result) {
+  switch (result) {
+    case APP_MSG_OK: return "APP_MSG_OK";
+    case APP_MSG_SEND_TIMEOUT: return "APP_MSG_SEND_TIMEOUT";
+    case APP_MSG_SEND_REJECTED: return "APP_MSG_SEND_REJECTED";
+    case APP_MSG_NOT_CONNECTED: return "APP_MSG_NOT_CONNECTED";
+    case APP_MSG_APP_NOT_RUNNING: return "APP_MSG_APP_NOT_RUNNING";
+    case APP_MSG_INVALID_ARGS: return "APP_MSG_INVALID_ARGS";
+    case APP_MSG_BUSY: return "APP_MSG_BUSY";
+    case APP_MSG_BUFFER_OVERFLOW: return "APP_MSG_BUFFER_OVERFLOW";
+    case APP_MSG_ALREADY_RELEASED: return "APP_MSG_ALREADY_RELEASED";
+    case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "APP_MSG_CALLBACK_ALREADY_REGISTERED";
+    case APP_MSG_CALLBACK_NOT_REGISTERED: return "APP_MSG_CALLBACK_NOT_REGISTERED";
+    case APP_MSG_OUT_OF_MEMORY: return "APP_MSG_OUT_OF_MEMORY";
+    case APP_MSG_CLOSED: return "APP_MSG_CLOSED";
+    case APP_MSG_INTERNAL_ERROR: return "APP_MSG_INTERNAL_ERROR";
+    default: return "UNKNOWN ERROR";
+  }
+}
+
 void handle_conn(bool connected) {
     //APP_LOG( APP_LOG_LEVEL_ERROR , "connected toggle");
 	if (connected) {
 			text_layer_set_text(tl_conn_layer, "BT: OK");
-      vibes_short_pulse();
+      //vibes_short_pulse();
 	} else {
 			text_layer_set_text(tl_conn_layer, "BT: LOST");
       vibes_long_pulse();
@@ -61,7 +82,7 @@ static void update_time(bool fullupdate) {
 	if(!fullupdate){
     //APP_LOG( APP_LOG_LEVEL_ERROR , "not full update");
 		fullupdate = (rt % 3600 == 0);
-    if (lastcheck > 0 && lastcheck+500 < t) { APP_LOG( APP_LOG_LEVEL_ERROR, "lastcheck %ld, fullupdate %d, rt %ld polling handset for update",lastcheck,fullupdate,rt);   lastcheck = (uint32_t) time(NULL); app_message_outbox_send(); };
+    //if (lastcheck > 0 && lastcheck+500 < t) { APP_LOG( APP_LOG_LEVEL_ERROR, "lastcheck %ld, fullupdate %d, rt %ld polling handset for update",lastcheck,fullupdate,rt);   lastcheck = (uint32_t) time(NULL); app_message_outbox_send(); };
 	}
 	
 	if(fullupdate){
@@ -73,7 +94,7 @@ static void update_time(bool fullupdate) {
     uint32_t offset = last-(curcyclestart->tm_yday*86400)-(curcyclestart->tm_hour*60*60)-(curcyclestart->tm_min*60)-(curcyclestart->tm_sec);
 		uint32_t cycle = (t - offset) / CYCLE_SEC;
     uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
-    APP_LOG( APP_LOG_LEVEL_ERROR , "full update %ld: utcoffset, %lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", utcoffset, offset, cycle, cp, year);
+   // APP_LOG( APP_LOG_LEVEL_ERROR , "full update %ld: utcoffset, %lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", utcoffset, offset, cycle, cp, year);
 
 		snprintf(buffer[0], BUF_SIZE, "%lu.%02lu", year, cycle);
 		snprintf(buffer[1], BUF_SIZE, "%02lu/35", cp);
@@ -115,22 +136,23 @@ static void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 }
 
 static void in_received_handler(DictionaryIterator *iter, void *context) {
-  APP_LOG( APP_LOG_LEVEL_ERROR , "inbound data");
+  //APP_LOG( APP_LOG_LEVEL_ERROR , "inbound data");
 	Tuple *ofs = dict_find(iter, 0);
 	Tuple *rgn = dict_find(iter, 1);
   if (ofs->value->uint32) {
 	memcpy(&mydata,&ofs->value->uint32,sizeof(uint32_t));
   
 	strncpy(region, rgn->value->cstring, rgn->length);
-  APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received, %s: region",mydata,region);
+ // APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received, %s: region",mydata,region);
   text_layer_set_text(tl_region_layer, region);
   lastcheck = (uint32_t) time(NULL);
   update_time(true);
+  //app_message_outbox_send();
   };
 }
 
 static void in_dropped_handler(AppMessageResult reason, void *context) {
-  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+   APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
 }
 
 void appmessage_init(void) {
@@ -138,8 +160,9 @@ void appmessage_init(void) {
   app_message_register_inbox_dropped(in_dropped_handler);
   const int inbound_size = 64;
   const int outbound_size = 16;
-  app_message_open(inbound_size, outbound_size);
-	//app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  //app_message_open(inbound_size, outbound_size);
+	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+  app_message_outbox_send();
 }
 
 void handle_init(void) {
