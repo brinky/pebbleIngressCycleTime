@@ -49,9 +49,24 @@ char *translate_error(AppMessageResult result) {
 void handle_conn(bool connected) {
     //APP_LOG( APP_LOG_LEVEL_ERROR , "connected toggle");
 	if (connected) {
-			text_layer_set_text(tl_conn_layer, "BT: OK");
+    #ifdef PBL_COLOR
+       text_layer_set_background_color(tl_conn_layer, GColorDukeBlue);
+    #else 
+       text_layer_set_background_color(tl_conn_layer, GColorBlack);
+    #endif
+      //text_layer_set_background_color(tl_conn_layer, GColorBlack);
+      text_layer_set_text_color(tl_conn_layer, GColorWhite);
+      text_layer_set_text(tl_conn_layer, "BT: OK");
       //vibes_short_pulse();
 	} else {
+       #ifdef PBL_COLOR
+          //text_layer_set_background_color(tl_conn_layer, GColorBlack);
+          text_layer_set_background_color(tl_conn_layer, GColorDukeBlue);
+          text_layer_set_text_color(tl_conn_layer, GColorRed);
+       #else
+          text_layer_set_background_color(tl_conn_layer, GColorWhite);
+          text_layer_set_text_color(tl_conn_layer, GColorBlack);
+      #endif
 			text_layer_set_text(tl_conn_layer, "BT: LOST");
       vibes_long_pulse();
 	}
@@ -59,6 +74,23 @@ void handle_conn(bool connected) {
 
 void handle_batt(BatteryChargeState charge) {
   static char battstate[BUF_SIZE];
+  
+          //text_layer_set_background_color(tl_batt_layer, GColorBlack);
+          text_layer_set_text_color(tl_batt_layer, GColorWhite);
+  #ifdef PBL_COLOR
+            if (charge.charge_percent <= 20)  {
+                text_layer_set_text_color(tl_batt_layer, GColorRed);
+            }
+            if (charge.charge_percent <= 50 && charge.charge_percent > 20)  {
+                text_layer_set_text_color(tl_batt_layer, GColorPastelYellow);
+            }
+            if (charge.is_charging)  {
+                text_layer_set_text_color(tl_batt_layer, GColorYellow);
+            }
+            if (charge.charge_percent == 100) {
+                text_layer_set_text_color(tl_batt_layer, GColorGreen);
+            }
+  #endif
   snprintf(battstate, BUF_SIZE, "%s: %d%%", charge.is_charging?"CHG":"BATT",charge.charge_percent);
   text_layer_set_text(tl_batt_layer, battstate);
   //APP_LOG( APP_LOG_LEVEL_ERROR , "handle batt");
@@ -141,7 +173,7 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *rgn = dict_find(iter, 1);
   if (ofs->value->uint32) {
 	memcpy(&mydata,&ofs->value->uint32,sizeof(uint32_t));
-  
+  persist_write_int(1,mydata); //store this for later
 	strncpy(region, rgn->value->cstring, rgn->length);
  // APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received, %s: region",mydata,region);
   text_layer_set_text(tl_region_layer, region);
@@ -158,9 +190,7 @@ static void in_dropped_handler(AppMessageResult reason, void *context) {
 void appmessage_init(void) {
 	app_message_register_inbox_received(in_received_handler);
   app_message_register_inbox_dropped(in_dropped_handler);
-  const int inbound_size = 64;
-  const int outbound_size = 16;
-  //app_message_open(inbound_size, outbound_size);
+ 
 	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
   app_message_outbox_send();
 }
@@ -175,63 +205,114 @@ void handle_init(void) {
 	Layer *root_layer = window_get_root_layer(my_window);	
 	GRect frame = layer_get_frame(root_layer);
 	
-	window_set_background_color(my_window, GColorBlack);
+  #ifdef PBL_COLOR
+    window_set_background_color(my_window, GColorDukeBlue);
+  #else
+    window_set_background_color(my_window, GColorBlack);
+  #endif
 	
 	tl_cycle = text_layer_create(GRect(0, 0, 70, 26));
 	text_layer_set_font(tl_cycle, font_m);	
 	text_layer_set_text_alignment(tl_cycle, GTextAlignmentLeft);
-	text_layer_set_background_color(tl_cycle, GColorBlack);
-	text_layer_set_text_color(tl_cycle, GColorWhite);
+  #ifdef PBL_COLOR
+    text_layer_set_background_color(tl_cycle, GColorDukeBlue);
+    text_layer_set_text_color(tl_cycle, GColorWhite);
+  #else
+    text_layer_set_background_color(tl_cycle, GColorBlack);
+    text_layer_set_text_color(tl_cycle, GColorWhite);
+	#endif
 	
 	tl_cp = text_layer_create(GRect(70, 0, frame.size.w-70, 26));
 	text_layer_set_font(tl_cp, font_m);
 	text_layer_set_text_alignment(tl_cp, GTextAlignmentRight);
-	text_layer_set_background_color(tl_cp, GColorBlack);
-	text_layer_set_text_color(tl_cp, GColorWhite);
+	#ifdef PBL_COLOR
+    text_layer_set_background_color(tl_cp, GColorDukeBlue);
+    text_layer_set_text_color(tl_cp, GColorWhite);
+  #else
+    text_layer_set_background_color(tl_cp, GColorBlack);
+    text_layer_set_text_color(tl_cp, GColorWhite);
+	#endif
 	
 
 	tl_countdown = text_layer_create(GRect(0, 25, frame.size.w, 30));
 	text_layer_set_font(tl_countdown, font_b);
 	text_layer_set_text_alignment(tl_countdown, GTextAlignmentCenter);
-	text_layer_set_background_color(tl_countdown, GColorBlack);
-	text_layer_set_text_color(tl_countdown, GColorWhite);
+	#ifdef PBL_COLOR
+    text_layer_set_background_color(tl_countdown, GColorDukeBlue);
+    text_layer_set_text_color(tl_countdown, GColorWhite);
+  #else
+    text_layer_set_background_color(tl_countdown, GColorBlack);
+    text_layer_set_text_color(tl_countdown, GColorWhite);
+	#endif
 	
 	tl_list = text_layer_create(GRect(0, frame.size.h-25, frame.size.w, 20));
 	text_layer_set_font(tl_list, font_s);
 	text_layer_set_text_alignment(tl_list, GTextAlignmentCenter);
-	text_layer_set_background_color(tl_list, GColorBlack);
-	text_layer_set_text_color(tl_list, GColorWhite);
+	#ifdef PBL_COLOR
+    text_layer_set_background_color(tl_list, GColorDukeBlue);
+    text_layer_set_text_color(tl_list, GColorWhite);
+  #else
+    text_layer_set_background_color(tl_list, GColorBlack);
+    text_layer_set_text_color(tl_list, GColorWhite);
+	#endif
+	
 	
 	img_res = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_RES); //48x67
 	bl_res = bitmap_layer_create(GRect(0, 60, 50, 70));
-	bitmap_layer_set_bitmap(bl_res, img_res);
-	bitmap_layer_set_alignment(bl_res, GAlignLeft);
+  bitmap_layer_set_bitmap(bl_res, img_res);
+	bitmap_layer_set_alignment(bl_res, GAlignLeft); 
 
+#ifdef PBL_COLOR
+  bitmap_layer_set_background_color(bl_res, GColorDukeBlue);
+#else
+  bitmap_layer_set_background_color(bl_res, GColorBlack);
+#endif
+    
   tl_realtime = text_layer_create(GRect(55, 60, frame.size.w-60, 20));
 	text_layer_set_font(tl_realtime, font_s);
 	text_layer_set_text_alignment(tl_realtime, GTextAlignmentRight);
-	text_layer_set_background_color(tl_realtime, GColorBlack);
-	text_layer_set_text_color(tl_realtime, GColorWhite);
-  
+	#ifdef PBL_COLOR
+    text_layer_set_background_color(tl_realtime, GColorDukeBlue);
+    text_layer_set_text_color(tl_realtime, GColorWhite);
+  #else
+    text_layer_set_background_color(tl_realtime, GColorBlack);
+    text_layer_set_text_color(tl_realtime, GColorWhite);
+	#endif
+    
 	tl_conn_layer = text_layer_create(GRect(55, 80, frame.size.w-60, 20));
   text_layer_set_font(tl_conn_layer, font_s);
 	text_layer_set_text_alignment(tl_conn_layer, GTextAlignmentRight);
-	text_layer_set_background_color(tl_conn_layer, GColorBlack);
-	text_layer_set_text_color(tl_conn_layer, GColorWhite);
+	#ifdef PBL_COLOR
+    text_layer_set_background_color(tl_conn_layer, GColorDukeBlue);
+    text_layer_set_text_color(tl_conn_layer, GColorWhite);
+  #else
+    text_layer_set_background_color(tl_conn_layer, GColorBlack);
+    text_layer_set_text_color(tl_conn_layer, GColorWhite);
+	#endif
 	text_layer_set_text(tl_conn_layer, "BT: --");
 	
   tl_batt_layer = text_layer_create(GRect(55, 100, frame.size.w-60, 20));
   text_layer_set_font(tl_batt_layer, font_s);
 	text_layer_set_text_alignment(tl_batt_layer, GTextAlignmentRight);
-	text_layer_set_background_color(tl_batt_layer, GColorBlack);
-	text_layer_set_text_color(tl_batt_layer, GColorWhite);
+	#ifdef PBL_COLOR
+    text_layer_set_background_color(tl_batt_layer, GColorDukeBlue);
+    text_layer_set_text_color(tl_batt_layer, GColorWhite);
+  #else
+    text_layer_set_background_color(tl_batt_layer, GColorBlack);
+    text_layer_set_text_color(tl_batt_layer, GColorWhite);
+	#endif
 	text_layer_set_text(tl_batt_layer, "BATT: --");
  	
 	tl_region_layer = text_layer_create(GRect(30, 120, frame.size.w-35, 20));
  	text_layer_set_font(tl_region_layer, font_s);
 	text_layer_set_text_alignment(tl_region_layer, GTextAlignmentRight);
-	text_layer_set_background_color(tl_region_layer, GColorBlack);
-	text_layer_set_text_color(tl_region_layer, GColorWhite);
+	#ifdef PBL_COLOR
+    text_layer_set_background_color(tl_region_layer, GColorDukeBlue);
+    text_layer_set_text_color(tl_region_layer, GColorWhite);
+  #else
+    text_layer_set_background_color(tl_region_layer, GColorBlack);
+    text_layer_set_text_color(tl_region_layer, GColorWhite);
+	#endif
 	text_layer_set_text(tl_region_layer, "-REGION-");	
  
 	layer_add_child(root_layer, bitmap_layer_get_layer(bl_res));
@@ -250,6 +331,7 @@ void handle_init(void) {
 	handle_conn(bluetooth_connection_service_peek());
 	battery_state_service_subscribe(handle_batt);
 	handle_batt(battery_state_service_peek());
+  mydata=persist_read_int(1); // read in the last known offset
 	update_time(true);
   appmessage_init();
 }
