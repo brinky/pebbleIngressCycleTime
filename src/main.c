@@ -172,8 +172,11 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *ofs = dict_find(iter, 0);
 	Tuple *rgn = dict_find(iter, 1);
   if (ofs->value->uint32) {
+    if (ofs->value->uint32 != mydata) {
+        persist_write_int(1,mydata); //store this for later otherwise don't
+        //APP_LOG (APP_LOG_LEVEL_ERROR , "%lu: utcoffset stored in slot 1", mydata);
+    }
 	memcpy(&mydata,&ofs->value->uint32,sizeof(uint32_t));
-  persist_write_int(1,mydata); //store this for later
 	strncpy(region, rgn->value->cstring, rgn->length);
  // APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received, %s: region",mydata,region);
   text_layer_set_text(tl_region_layer, region);
@@ -332,6 +335,8 @@ void handle_init(void) {
 	battery_state_service_subscribe(handle_batt);
 	handle_batt(battery_state_service_peek());
   mydata=persist_read_int(1); // read in the last known offset
+  //APP_LOG (APP_LOG_LEVEL_ERROR , "%lu: utcoffset retrieved from slot 1", mydata);
+
 	update_time(true);
   appmessage_init();
 }
