@@ -106,7 +106,12 @@ static void update_time(bool fullupdate) {
    //APP_LOG( APP_LOG_LEVEL_ERROR , "%ld: utcoffset tick",utcoffset*60);
 	time_t rt = time(NULL);
   uint32_t t = rt;
-	uint32_t countdown = CP_SEC - (t + utcoffset*60)  % CP_SEC ;
+  uint32_t countdown;
+  if (clock_is_timezone_set()) { //thanks, pebble. #sigh
+    countdown = CP_SEC - t  % CP_SEC ;  
+    } else {
+	  countdown = CP_SEC - (t + utcoffset*60)  % CP_SEC ;
+  };
 	struct tm *tms;
   struct tm *acttime;
   struct tm *curcyclestart;
@@ -118,32 +123,50 @@ static void update_time(bool fullupdate) {
 	}
 	
 	if(fullupdate){
+   //if (clock_is_timezone_set()) { //thanks, pebble. #sigh
+      uint32_t next;
+      uint32_t last;
+      if (clock_is_timezone_set()) { //thanks, pebble. #sigh
+      next = rt + countdown;
+      last = rt - (CYCLE_SEC-countdown);
+      } else {
+      next = rt + countdown + utcoffset*60;
+      last = rt - (CYCLE_SEC-countdown)+utcoffset*60;
+      }
+      curcyclestart = localtime((time_t*) &last);
+		  uint32_t year = curcyclestart->tm_year+1900; //we have our year
+      uint32_t offset = last-(curcyclestart->tm_yday*86400)-(curcyclestart->tm_hour*60*60)-(curcyclestart->tm_min*60)-(curcyclestart->tm_sec);
+      uint32_t cycle;
+      uint32_t cp;
+      if (clock_is_timezone_set()) { //thanks, pebble. #sigh
+        cycle = t / CYCLE_SEC;
+        cp = (t % CYCLE_SEC) / CP_SEC + 1;
+      } else {
+        cycle = (t - offset) / CYCLE_SEC;
+        cp = (t % CYCLE_SEC) / CP_SEC + 1;
+      }
+      //APP_LOG( APP_LOG_LEVEL_ERROR , "full update %ld: utcoffset, %lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", utcoffset, offset, cycle, cp, year);
 
-    uint32_t next = rt + countdown + utcoffset*60;
-    uint32_t last = rt - (CYCLE_SEC-countdown)+utcoffset*60;
-    curcyclestart = localtime((time_t*) &last);
-		uint32_t year = curcyclestart->tm_year+1900; //we have our year
-    uint32_t offset = last-(curcyclestart->tm_yday*86400)-(curcyclestart->tm_hour*60*60)-(curcyclestart->tm_min*60)-(curcyclestart->tm_sec);
-		uint32_t cycle = (t - offset) / CYCLE_SEC;
-    uint32_t cp = (t % CYCLE_SEC) / CP_SEC + 1;
-   // APP_LOG( APP_LOG_LEVEL_ERROR , "full update %ld: utcoffset, %lu: offset, %lu: cycle, %lu: checkpoint, %lu: year", utcoffset, offset, cycle, cp, year);
-
-		snprintf(buffer[0], BUF_SIZE, "%lu.%02lu", year, cycle);
-		snprintf(buffer[1], BUF_SIZE, "%02lu/35", cp);
-		text_layer_set_text(tl_cycle, buffer[0]);
-		text_layer_set_text(tl_cp, buffer[1]);
-	  next = next - utcoffset*60;
-		tms = localtime((time_t*) &next);
-		int nc = tms->tm_hour;
-    int ncm = tms->tm_min;
-		for(int i=0; i<SHOW_CP_NUM; ++i, nc = (nc+5) % 24){
-			snprintf(buffer[3] + CP_DATA_SIZE*i, BUF_SIZE, "%02d:%02d,", nc,ncm); 
-		}
-		buffer[3][SHOW_CP_NUM * CP_DATA_SIZE - 1] = '\0';
-		text_layer_set_text(tl_list, buffer[3]);
+		  snprintf(buffer[0], BUF_SIZE, "%lu.%02lu", year, cycle);
+		  snprintf(buffer[1], BUF_SIZE, "%02lu/35", cp);
+		  text_layer_set_text(tl_cycle, buffer[0]);
+		  text_layer_set_text(tl_cp, buffer[1]);
+      if (clock_is_timezone_set()) { //thanks, pebble. #sigh
+        tms = localtime((time_t*) &next);
+      } else {
+        next = next - utcoffset*60;
+        tms = localtime((time_t*) &next);
+      }
+		  int nc = tms->tm_hour;
+      int ncm = tms->tm_min;
+		  for(int i=0; i<SHOW_CP_NUM; ++i, nc = (nc+5) % 24){
+		  snprintf(buffer[3] + CP_DATA_SIZE*i, BUF_SIZE, "%02d:%02d,", nc,ncm); 
+		  }
+		  buffer[3][SHOW_CP_NUM * CP_DATA_SIZE - 1] = '\0';
+		  text_layer_set_text(tl_list, buffer[3]);
     
 	}
-	tms = localtime((time_t*)&countdown);
+	tms = gmtime((time_t*)&countdown);
   if (countdown <= 300) {
     strftime(buffer[2], BUF_SIZE, "%H:%M:%S", tms);
     tick_timer_service_unsubscribe();
@@ -173,12 +196,12 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *rgn = dict_find(iter, 1);
   if (ofs->value->uint32) {
     if (ofs->value->uint32 != mydata) {
-        persist_write_int(1,mydata); //store this for later otherwise don't
-        //APP_LOG (APP_LOG_LEVEL_ERROR , "%lu: utcoffset stored in slot 1", mydata);
+        persist_write_int(1,ofs->value->uint32); //store this for later otherwise don't
+        //APP_LOG (APP_LOG_LEVEL_ERROR , "%lu: utcoffset stored in slot 1", ofs->value->uint32);
     }
 	memcpy(&mydata,&ofs->value->uint32,sizeof(uint32_t));
 	strncpy(region, rgn->value->cstring, rgn->length);
- // APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received, %s: region",mydata,region);
+  //APP_LOG( APP_LOG_LEVEL_ERROR , "%lu: utcoffset received, %s: region",mydata,region);
   text_layer_set_text(tl_region_layer, region);
   lastcheck = (uint32_t) time(NULL);
   update_time(true);
