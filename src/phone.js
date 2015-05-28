@@ -386,4 +386,63 @@ function updatePebble(e)
 }
 Pebble.addEventListener('ready', updatePebble);
 Pebble.addEventListener('appmessage',updatePebble);
+Pebble.addEventListener('showConfiguration', function(e) {
+  // Show config page
+  var topics=[];
+  Pebble.timelineSubscriptions(
+      function (topics) {
+          console.log('Subscribed to ' + topics.join(', '));
+        },
+       function (errorString) {
+         console.log('Error getting subscriptions: ' + errorString);
 
+       }
+      );
+  var current_watch;
+  if(Pebble.getActiveWatchInfo) {
+      try {
+        current_watch = Pebble.getActiveWatchInfo();
+      } catch(err) {
+        current_watch = {
+          platform: "basalt",
+        };
+      }
+    } else {
+      current_watch = {
+        platform: "aplite",
+      };
+    }
+    console.log('Using watch info: ' + JSON.stringify(current_watch));
+  //Pebble.openURL('http://api.mudkips.net/static/ingressconfig.html?topics='+topics.join(',')+"&platform="+current_watch.platform);
+  Pebble.openURL('http://x.SetPebble.com/GQR3/' + Pebble.getAccountToken());
+Pebble.addEventListener('webviewclosed',
+  function(e) {
+    if ((typeof(e.response) == 'string') && (e.response.length > 0)) {
+    console.log(e.response);
+    var configuration = JSON.parse(decodeURIComponent(e.response));
+    console.log('Configuration window returned: ', JSON.stringify(configuration));
+    if (configuration) {
+      if (configuration[1]) { 
+        Pebble.timelineSubscribe('shard',function () { console.log('Subscribed: shard'); }, function (errorString) { console.log('Error subscribing to topic: ' + errorString); } );
+        } else {
+        Pebble.timelineUnsubscribe('shard',function () { console.log('Unsubscribed: shard'); }, function (errorString) { console.log('Error subscribing to topic: ' + errorString); } );
+        }
+       if (configuration[2]) { 
+        Pebble.timelineSubscribe('shardscore',function () { console.log('Subscribed: shardscore'); }, function (errorString) { console.log('Error subscribing to topic: ' + errorString); } );
+        } else {
+        Pebble.timelineUnsubscribe('shardscore',function () { console.log('Unsubscribed: shardscore'); }, function (errorString) { console.log('Error subscribing to topic: ' + errorString); } );
+        }
+        if (configuration[3]) { 
+        Pebble.timelineSubscribe('anomaly',function () { console.log('Subscribed: anomaly'); }, function (errorString) { console.log('Error subscribing to topic: ' + errorString); } );
+        } else {
+        Pebble.timelineUnsubscribe('anomaly',function () { console.log('Unsubscribed: anomaly'); }, function (errorString) { console.log('Error subscribing to topic: ' + errorString); } );
+        }
+        if (configuration[4]) { 
+        Pebble.timelineSubscribe('anomalyscore',function () { console.log('Subscribed: anomalyscore'); }, function (errorString) { console.log('Error subscribing to topic: ' + errorString); } );
+        } else {
+        Pebble.timelineUnsubscribe('anomalyscore',function () { console.log('Unsubscribed: anomalyscore'); }, function (errorString) { console.log('Error subscribing to topic: ' + errorString); } );
+        }
+    }
+    }
+  });
+});
