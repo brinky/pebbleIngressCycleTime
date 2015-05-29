@@ -1,30 +1,36 @@
 {
-    "versionLabel": "0.3",
-    "uuid": "4b8a2be7-bff0-4269-aefb-8f28fbf3fc48",
     "appKeys": {},
-    "longName": "ingress cycle time",
-    "versionCode": 4,
     "capabilities": [
-        ""
+        "location",
+        "configurable"
     ],
-    "shortName": "cycle time",
-    "companyName": "@brinky",
-    "watchapp": {
-        "watchface": true
-    },
+    "companyName": "@noweb4u",
+    "longName": "Ingress Resistance Cycle Time",
+    "projectType": "native",
     "resources": {
         "media": [
             {
-                "type": "png",
+                "file": "images/res-bw.png",
                 "name": "IMAGE_RES",
-                "file": "images/res.png"
+                "type": "png"
             },
             {
+                "file": "images/res_logo.png",
                 "menuIcon": true,
-                "type": "png",
                 "name": "IMAGE_RES_LOGO",
-                "file": "images/res_logo.png"
+                "type": "png"
             }
         ]
+    },
+    "sdkVersion": "3",
+    "shortName": "Resistance Cycle Time",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
+    "uuid": "daeb9c98-fb68-456a-8ab9-50153774fa6f",
+    "versionLabel": "2.5",
+    "watchapp": {
+        "watchface": true
     }
 }
